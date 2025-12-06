@@ -1,0 +1,8 @@
+[package]
+license = ["Apache-2.0"]
+keywords = ["Test"]
+org = "testOrg"
+name = "connector1"
+distribution = "2201.13.1"
+version = "1.0.0"
+authors = ["Ballerina"]

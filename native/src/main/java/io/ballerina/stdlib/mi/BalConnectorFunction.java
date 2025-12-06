@@ -18,28 +18,28 @@
 
 package io.ballerina.stdlib.mi;
 
-import io.ballerina.runtime.api.Runtime;
 import io.ballerina.runtime.api.creators.TypeCreator;
 import io.ballerina.runtime.api.creators.ValueCreator;
 import io.ballerina.runtime.api.types.RecordType;
 import io.ballerina.runtime.api.types.Type;
 import io.ballerina.runtime.api.utils.StringUtils;
 import io.ballerina.runtime.api.values.*;
+import org.apache.axis2.AxisFault;
 import org.apache.synapse.MessageContext;
-import org.apache.synapse.data.connector.ConnectorResponse;
-import org.apache.synapse.data.connector.DefaultConnectorResponse;
 import org.apache.synapse.mediators.template.TemplateContext;
 import org.ballerinalang.langlib.value.FromJsonStringWithType;
 import org.wso2.integration.connector.core.AbstractConnector;
 import org.wso2.integration.connector.core.ConnectException;
 import org.wso2.integration.connector.core.connection.ConnectionHandler;
 
-import java.util.Objects;
 import java.util.Stack;
 
 import static io.ballerina.stdlib.mi.Constants.*;
 
 public class BalConnectorFunction extends AbstractConnector {
+
+    private final BalExecutor balExecutor = new BalExecutor();
+
     @Override
     public void connect(MessageContext messageContext) throws ConnectException {
         //TODO: get the runtime, module and client with connection name
@@ -55,36 +55,45 @@ public class BalConnectorFunction extends AbstractConnector {
         BalConnectorConnection balConnection = (BalConnectorConnection) handler.getConnection(connectorName, messageContext.getProperty("connectionName").toString());
         BObject clientObj = balConnection.getBalConnectorObj();
 
-        Runtime rt = BalConnectorConfig.getRuntime();
-        System.out.println("running function");
-        String balFunctionReturnType = messageContext.getProperty(RETURN_TYPE).toString();
-        Object[] args = new Object[Integer.parseInt(messageContext.getProperty(Constants.SIZE).toString())];
-        setParameters(args, messageContext);
-        if (null != clientObj) {
-            try {
-                Object result = rt.callMethod(clientObj, messageContext.getProperty(METHOD_NAME).toString(), null, args);
-                //TODO: Handle other result types
-                if (Objects.equals(balFunctionReturnType, XML)) {
-                    result = BXmlConverter.toOMElement((BXml) result);
-                } else if (Objects.equals(balFunctionReturnType, DECIMAL)) {
-                    result = ((BDecimal) result).value().toString();
-                } else if (Objects.equals(balFunctionReturnType, STRING)) {
-                    result = ((BString) result).getValue();
-                } else if (Objects.equals(balFunctionReturnType, ARRAY) || result instanceof BArray) {
-                    // Convert BArray to JSON string format for MI consumption
-                    result = TypeConverter.arrayToJsonString((BArray) result);
-                } else if (result instanceof BMap || result instanceof BObject) {
-                    //TODO: handling Ballerina class objects - eg: covid19 method getGovernmentReportedDataByCountry
-                    result = result.toString();
-                }
-                //TODO: handle conditionally overriding the payload - currently payload is not set
-                ConnectorResponse connectorResponse = new DefaultConnectorResponse();
-                connectorResponse.setPayload(result);
-                messageContext.setVariable(getResultProperty(messageContext), connectorResponse);
-            } catch (BError bError) {
-                handleException(bError.getMessage(), messageContext);
-            }
+        if(clientObj == null) {
+            throw new ConnectException("No connection found for " + connectorName);
         }
+
+        try {
+            balExecutor.execute(BalConnectorConfig.getRuntime(), clientObj, messageContext);
+        } catch (AxisFault e) {
+            handleException("Error while executing ballerina",e,messageContext);
+        }
+//        Runtime rt = BalConnectorConfig.getRuntime();
+//        System.out.println("running function");
+//        String balFunctionReturnType = messageContext.getProperty(RETURN_TYPE).toString();
+//        Object[] args = new Object[Integer.parseInt(messageContext.getProperty(Constants.SIZE).toString())];
+//        setParameters(args, messageContext);
+//        if (null != clientObj) {
+//            try {
+//                Object result = rt.callMethod(clientObj, messageContext.getProperty(METHOD_NAME).toString(), null, args);
+//                //TODO: Handle other result types
+//                if (Objects.equals(balFunctionReturnType, XML)) {
+//                    result = BXmlConverter.toOMElement((BXml) result);
+//                } else if (Objects.equals(balFunctionReturnType, DECIMAL)) {
+//                    result = ((BDecimal) result).value().toString();
+//                } else if (Objects.equals(balFunctionReturnType, STRING)) {
+//                    result = ((BString) result).getValue();
+//                } else if (Objects.equals(balFunctionReturnType, ARRAY) || result instanceof BArray) {
+//                    // Convert BArray to JSON string format for MI consumption
+//                    result = BTypeConverter.arrayToJsonString((BArray) result);
+//                } else if (result instanceof BMap || result instanceof BObject) {
+//                    //TODO: handling Ballerina class objects - eg: covid19 method getGovernmentReportedDataByCountry
+//                    result = result.toString();
+//                }
+//                //TODO: handle conditionally overriding the payload - currently payload is not set
+//                ConnectorResponse connectorResponse = new DefaultConnectorResponse();
+//                connectorResponse.setPayload(result);
+//                messageContext.setVariable(getResultProperty(messageContext), connectorResponse);
+//            } catch (BError bError) {
+//                handleException(bError.getMessage(), messageContext);
+//            }
+//        }
         //TODO: Handle null client object
 
 

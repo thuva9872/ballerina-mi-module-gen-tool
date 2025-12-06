@@ -1,5 +1,4 @@
 # Ballerina tool for WSO2 Micro Integrator module generator
-
 ## Overview
 
 The `mi-module-gen` tools allows generation of modules for WSO2 Micro Integrator from Ballerina code.

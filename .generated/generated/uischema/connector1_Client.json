@@ -1,0 +1,37 @@
+{
+  "connectorName": "connector1",
+  "connectionName": "connector1_Client",
+  "title": "Connection Config for connector1_Client connection",
+  "help": "<h1>connector1_Client Connection</h1> <b></b>",
+  "elements": [
+    {
+      "type": "attribute",
+      "value": {
+        "name": "connectionName",
+        "displayName": "Connection Name",
+        "inputType": "string",
+        "defaultValue": "connector1_Client_connection_1",
+        "required": "true",
+        "helpTip": "The name for the connector1_Client connection",
+        "validation": "nameWithoutSpecialCharactors"
+      }
+    },
+    {
+      "type": "attributeGroup",
+      "value": {
+        "groupName": "General",
+        "elements": [
+          {
+            "type": "attributeGroup",
+            "value": {
+              "groupName": "Basic",
+              "elements": [
+                
+              ]
+            }
+          }
+        ]
+      }
+    }
+  ]
+}

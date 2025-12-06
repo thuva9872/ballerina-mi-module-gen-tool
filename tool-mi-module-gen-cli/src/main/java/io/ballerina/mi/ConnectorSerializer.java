@@ -203,7 +203,7 @@ public class ConnectorSerializer {
             handlebar.registerHelper("writeComponentXmlProperties", (context, options) -> {
                 Component component = (Component) context;
                 StringBuilder result = new StringBuilder();
-                List<Type> queryParams = component.getQueryParams();
+                List<FunctionParam> queryParams = component.getFunctionParams();
                 for (int i = 0; i < queryParams.size(); i++) {
                     writeComponentXmlQueryProperty(queryParams.get(i), i, result);
                 }
@@ -274,33 +274,33 @@ public class ConnectorSerializer {
         result.append(String.format("<property name=\"pathParamType%d\" value=\"%s\"/>\n", index, parameter.typeName));
     }
 
-    private static void writeComponentXmlQueryProperty(Type parameter, int index, StringBuilder result) {
-        switch (parameter.typeName) {
+    private static void writeComponentXmlQueryProperty(FunctionParam parameter, int index, StringBuilder result) {
+        switch (parameter.getParamType()) {
             case STRING:
             case INT, DECIMAL, FLOAT:
             case ENUM, ARRAY:
             case BOOLEAN, MAP:
                 result.append(String.format("<property name=\"queryParam%d\" value=\"%s\"/>\n", index,
-                        parameter.name));
+                        parameter.getKey()));
                 result.append(String.format("<property name=\"queryParamType%d\" value=\"%s\"/>\n", index,
-                        parameter.typeName));
+                        parameter.getValue()));
                 break;
             case UNION:
-                result.append(String.format("<property name=\"queryParam%d\" value=\"%s\"/>\n", index,
-                        parameter.name));
-                result.append(String.format("<property name=\"queryParamType%d\" value=\"%s\"/>\n", index,
-                        parameter.typeName));
-                result.append(String.format("<property name=\"queryParamDataType%d\" value=\"%s\"/>\n", index,
-                        String.format("%s_%s", parameter.name, "dataType")));
+//                result.append(String.format("<property name=\"queryParam%d\" value=\"%s\"/>\n", index,
+//                        parameter.name));
+//                result.append(String.format("<property name=\"queryParamType%d\" value=\"%s\"/>\n", index,
+//                        parameter.typeName));
+//                result.append(String.format("<property name=\"queryParamDataType%d\" value=\"%s\"/>\n", index,
+//                        String.format("%s_%s", parameter.name, "dataType")));
                 break;
             case RECORD:
                 result.append(String.format("<property name=\"queryParam%d\" value=\"%s\"/>\n", index,
                         parameter.name));
                 result.append(String.format("<property name=\"queryParamType%d\" value=\"%s\"/>\n", index,
                         parameter.typeName));
-                if (null != parameter.getTypeInfo()) {
+                if (null != parameter.getParamKind()) {
                     result.append(String.format("<property name=\"queryParamRecordName%d\" value=\"%s\"/>\n", index,
-                            parameter.typeInfo.name));
+                            parameter.getParamKind()));
                     result.append(String.format("<property name=\"queryParamRecordModule%d\" value=\"%s\"/>\n", index,
                             parameter.typeInfo.moduleName));
                     result.append(String.format("<property name=\"queryParamRecordOrg%d\" value=\"%s\"/>\n", index,
