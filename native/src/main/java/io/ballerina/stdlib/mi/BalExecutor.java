@@ -63,15 +63,12 @@ public class BalExecutor {
     public boolean execute(Runtime rt, Object callable, MessageContext context) throws AxisFault {
         String balFunctionReturnType = context.getProperty(Constants.RETURN_TYPE).toString();
         Object[] args = new Object[Integer.parseInt(context.getProperty(Constants.SIZE).toString())];
-        if (!setParameters(args, context)) {
-            return false;
-        }
+        setParameters(args, context);
         try {
             Object result;
             if (callable instanceof Module) {
                 result = rt.callFunction((Module) callable, context.getProperty(Constants.FUNCTION_NAME).toString(), null, args);
             } else if (callable instanceof BObject) {
-                System.out.println(callable);
                 result = rt.callMethod((BObject) callable, context.getProperty(FUNCTION_NAME).toString(), null, args);
             } else {
                 throw new SynapseException("Unsupported callable type: " + callable.getClass().getName());
@@ -130,25 +127,26 @@ public class BalExecutor {
         enrichMediator.mediate(synCtx);
     }
 
-    private boolean setParameters(Object[] args, MessageContext context) {
+    private void setParameters(Object[] args, MessageContext context) {
         for (int i = 0; i < args.length; i++) {
             Object param = getParameter(context, "param" + i, "paramType" + i, i);
-            if (param == null) {
-                return false;
-            }
             args[i] = param;
         }
-        return true;
     }
 
     public Object getParameter(MessageContext context, String value, String type, int index) {
         String paramName = context.getProperty(value).toString();
         Object param = lookupTemplateParameter(context, paramName);
-        if (param == null) {
-            log.error("Error in getting the ballerina function parameter: " + paramName);
-            return null;
+        String paramType;
+        if (value.matches("param\\d+Union.*")) {
+            paramType = type;
+        } else {
+            paramType = context.getProperty(type).toString();
         }
-        String paramType = context.getProperty(type).toString();
+        if (param == null && !UNION.equals(paramType)) {
+            log.error("Error in getting the ballerina function parameter: " + paramName);
+            throw new SynapseException("Parameter '" + paramName + "' is missing");
+        }
         return switch (paramType) {
             case BOOLEAN -> Boolean.parseBoolean((String) param);
             case INT -> Long.parseLong((String) param);
@@ -160,8 +158,18 @@ public class BalExecutor {
             case RECORD -> createRecordValue((String) param, context, index);
             case ARRAY -> getArrayParameter((String) param, context, value);
             case MAP -> getMapParameter(param);
+            case UNION -> getUnionParameter(paramName, context, index);
             default -> null;
         };
+    }
+
+    private Object getUnionParameter(String paramName, MessageContext context, int index) {
+        Object paramType = lookupTemplateParameter(context, paramName+"DataType");
+        if (paramType instanceof String typeStr) {
+            String unionParamName = "param" + index + "Union" + org.apache.commons.lang3.StringUtils.capitalize(typeStr);
+            return getParameter(context, unionParamName, typeStr, -1);
+        }
+        return null;
     }
 
     private Object createRecordValue(String jsonString, MessageContext context, int paramIndex) {

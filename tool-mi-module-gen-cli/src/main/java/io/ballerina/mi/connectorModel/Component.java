@@ -40,7 +40,7 @@ public class Component extends ModelElement {
     private final ArrayList<Param> params = new ArrayList<>();
     private final List<FunctionParam> functionParams = new ArrayList<>();
     private final List<PathParamType> pathParams;
-    private final List<Type> queryParams;
+//    private final List<Type> queryParams;
     private final String returnType;
 
     public Component(String name, String documentation, FunctionType functionType, String index, List<PathParamType> pathParams, List<Type> queryParams, String returnType) {
@@ -49,7 +49,7 @@ public class Component extends ModelElement {
         this.functionType = functionType;
         this.index = index;
         this.pathParams = pathParams;
-        this.queryParams = queryParams;
+//        this.queryParams = queryParams;
         this.returnType = returnType;
     }
 
@@ -97,9 +97,9 @@ public class Component extends ModelElement {
         this.objectTypeName = objectTypeName;
     }
 
-    public List<Type> getQueryParams() {
-        return queryParams;
-    }
+//    public List<Type> getQueryParams() {
+//        return queryParams;
+//    }
 
     public List<PathParamType> getPathParams() {
         return pathParams;
